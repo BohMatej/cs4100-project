@@ -120,6 +120,6 @@ class ChompUI:
 
 
 if __name__ == "__main__":
-    rows = int(sys.argv[1]) if len(sys.argv) > 1 else 5
+    rows = int(sys.argv[1]) if len(sys.argv) > 1 else 7
     cols = int(sys.argv[2]) if len(sys.argv) > 2 else 7
     ChompUI(rows, cols).run()
