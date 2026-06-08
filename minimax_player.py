@@ -92,7 +92,7 @@ class MinimaxPlayer(Player):
             - state.play(move) - plays a move, which is obtainable from state.legal_moves()
             
             The first line gives you the "key" of the state - this is the binary representation of
-            a state we talked about in our meeting (01101) representing right-up-up-right-up. This key 
+            a state we talked about in our meeting (01101) representing right-up-up-right-up. This key
             is a String as is used as a key in self._memo
             
             Ignore the other lines until the TODO comment. I use them to ensure that this function runs within
@@ -103,8 +103,22 @@ class MinimaxPlayer(Player):
             raise TimeoutError
         # If more states cannot be stored, assume this state is a losing one. Then select_move plays random.
         if self._max_states is not None and len(self._memo) >= self._max_states:
-            return False 
-        # TODO: Anjali - Finish the function here.
+            return False
+
+        if key in self._memo:
+            return self._memo[key]
+
+        result = False
+        for move in state.legal_moves():
+            child = state.play(move)
+            if child.is_terminal:
+                continue
+            if not self._is_winning(child):
+                result = True
+                breakpoint
+
+        self._memo[key] = result
+        return result
 
     def memory_report(self) -> MemoryReport:
         n = len(self._memo)
