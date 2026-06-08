@@ -19,6 +19,8 @@ from typing import Dict, List, Optional, Tuple
 from chompgame import ChompState, Move
 from player import Player, RandomPlayer, MemoryReport
 
+GAMMA = 1.0
+
 
 def _copy_q(q: Dict[str, Dict[Move, float]]) -> Dict[str, Dict[Move, float]]:
     """A deep-enough copy of a Q-table (snapshots the inner action dicts too)."""
@@ -70,13 +72,13 @@ class RLPlayer(Player):
 
     def select_move(self, state: ChompState, legal_moves: List[Move]) -> Move:
         """
-        NOTE to Sam: This function is NOT to be called to pick a move 
+        NOTE to Sam: This function is NOT to be called to pick a move
         for the agent we are currently training.
-        
-        This is simply what the player themselves will do when actually playing a 
+
+        This is simply what the player themselves will do when actually playing a
         game for real. The move selection when actually training should be done in
         the train function, or some private helper idgaf.
-        
+
         You will probably use this function to pick the "environment" (opponent) player's move
         in order to update the state for the agent you're training.
         """
@@ -146,8 +148,53 @@ class RLPlayer(Player):
         return True
 
     def _run_episode(self, rows: int, cols: int, opponent: Player) -> None:
-        # TODO here 
-        pass
+
+        if not hasattr(self, "_N") or len(self.Q) == 0:
+            self._N = defaultdict(dict)
+
+        def backup(s_key: str, move: Move, reward: float,
+                   next_state: Optional[ChompState]) -> None:
+            n_sa = self._N[s_key].get(move, 0.0)
+            eta = 1.0 / (1.0 + n_sa)
+            if next_state is None:
+                target = reward
+            else:
+                nq = self.Q.get(next_state.key, {})
+                target = reward + GAMMA * max(
+                    (nq.get(m, 0.0) for m in next_state.legal_moves()), default=0.0)
+            old = self.Q[s_key].get(move, 0.0)
+            self.Q[s_key][move] = (1.0 - eta) * old + eta * target
+            self._N[s_key][move] = n_sa + 1.0
+
+        state = ChompState.initial(rows, cols)
+        agent_seat = random.randint(0, 1)
+
+        last_key: Optional[str] = None
+        last_move: Optional[Move] = None
+
+        while not state.is_terminal:
+            if state.current_player == agent_seat:
+                legal = state.legal_moves()
+                if random.random() < self.epsilon:
+                    move = random.choice(legal)
+                else:
+                    q = self.Q.get(state.key, {})
+                    move = max(legal, key=lambda m: q.get(m, 0.0))
+
+                if last_key is not None:
+                    backup(last_key, last_move, 0.0, state)
+                last_key, last_move = state.key, move
+                state = state.play(move)
+                if state.is_terminal:
+                    backup(last_key, last_move, -1.0, None)
+                    return
+            else:
+                move = opponent.select_move(state, state.legal_moves())
+                state = state.play(move)
+                if state.is_terminal:
+                    if last_key is not None:
+                        backup(last_key, last_move, +1.0, None)
+                    return
 
     def memory_report(self) -> MemoryReport:
         n_states = len(self.Q)
