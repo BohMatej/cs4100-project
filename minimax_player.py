@@ -104,7 +104,21 @@ class MinimaxPlayer(Player):
         # If more states cannot be stored, assume this state is a losing one. Then select_move plays random.
         if self._max_states is not None and len(self._memo) >= self._max_states:
             return False 
-        # TODO: Anjali - Finish the function here.
+        
+        if key in self._memo:
+            return self._memo[key]
+
+        result = False
+        for move in state.legal_moves():
+            child = state.play(move)
+            if child.is_terminal:
+                continue
+            if not self._is_winning(child):
+                result = True
+                breakpoint
+
+        self._memo[key] = result
+        return result
 
     def memory_report(self) -> MemoryReport:
         n = len(self._memo)
