@@ -115,7 +115,8 @@ class MinimaxPlayer(Player):
                 continue
             if not self._is_winning(child):
                 result = True
-                breakpoint
+                #breakpoint
+                break
 
         self._memo[key] = result
         return result

@@ -57,6 +57,8 @@ class RLPlayer(Player):
             "011000101.." format we talked about on saturday. Its type is str
             and only consists of 0s and 1s."""
         self.Q: Dict[str, Dict[Move, float]] = defaultdict(dict)
+        # adding it here to try and resolve bug
+        self._N: Dict[str, Dict[Move, float]] = defaultdict(dict)
 
         """Seed a ready-made strategy directly from a Q-table. This is how the
             "environment" opponent for a generation is built: a player that just
@@ -84,7 +86,8 @@ class RLPlayer(Player):
         """
         q = self.Q.get(state.key, {})
         if not q:
-            return legal_moves[0]
+            #return legal_moves[0]
+            return random.choice(legal_moves)
         return max(legal_moves, key=lambda m: q.get(m, 0.0))
 
     def train(
@@ -101,6 +104,8 @@ class RLPlayer(Player):
 
         # Last fully-trained table. This will be the strategy adopted by the RL player once training is done.
         committed: Optional[Dict[str, Dict[Move, float]]] = None
+        # adding here for bug
+        self._N = defaultdict(dict)
         try:
             for _ in range(self.num_generations):
                 finished = self._train_one_generation(
@@ -114,10 +119,12 @@ class RLPlayer(Player):
                 committed = _copy_q(self.Q)
                 opponent = RLPlayer.from_qtable(committed)
                 self.Q = defaultdict(dict)
+                self._N = defaultdict(dict)
         finally:
             # Fall back to the last fully-trained generation.
             if committed is not None:
                 self.Q = defaultdict(dict, _copy_q(committed))
+                self._N = defaultdict(dict)
 
     def _train_one_generation(self, rows: int, cols: int, opponent: Player,
                               deadline: Optional[float],
@@ -149,9 +156,12 @@ class RLPlayer(Player):
 
     def _run_episode(self, rows: int, cols: int, opponent: Player) -> None:
 
+        """
+        removing for now to see if it resolves bug
         if not hasattr(self, "_N") or len(self.Q) == 0:
             self._N = defaultdict(dict)
-
+        """
+        
         def backup(s_key: str, move: Move, reward: float,
                    next_state: Optional[ChompState]) -> None:
             n_sa = self._N[s_key].get(move, 0.0)
@@ -181,7 +191,7 @@ class RLPlayer(Player):
                     q = self.Q.get(state.key, {})
                     move = max(legal, key=lambda m: q.get(m, 0.0))
 
-                if last_key is not None:
+                if last_key is not None and last_move is not None:
                     backup(last_key, last_move, 0.0, state)
                 last_key, last_move = state.key, move
                 state = state.play(move)
@@ -192,7 +202,7 @@ class RLPlayer(Player):
                 move = opponent.select_move(state, state.legal_moves())
                 state = state.play(move)
                 if state.is_terminal:
-                    if last_key is not None:
+                    if last_key is not None and last_move is not None:
                         backup(last_key, last_move, +1.0, None)
                     return
 
