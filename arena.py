@@ -74,33 +74,34 @@ def play_series(
 
 if __name__ == "__main__":
     # Smoke test: Random vs Random on a 5x7 board.
-    #from player import RandomPlayer
+    from player import RandomPlayer
     # importing agents
     from minimax_player import MinimaxPlayer
     from rl_player import RLPlayer
 
-    #a = RandomPlayer(seed=1)
-    #a.name = "Random-A"
+    a = RandomPlayer(seed=1)
+    a.name = "Random-A"
     #b = RandomPlayer(seed=2)
     #b.name = "Random-B"
     
-    a = MinimaxPlayer()
-    a.name = "Minimax-A"
+    #a = MinimaxPlayer()
+    #a.name = "Minimax-A"
     b = RLPlayer()
     b.name = "RL-B"
     
     rows, cols = 7, 7
 
-    print("Training Minimax")
-    minimax = MinimaxPlayer()
-    minimax.train(rows=rows, cols=cols, time_budget=10.0)
+    #print("Training Minimax")
+    #minimax = MinimaxPlayer()
+    #minimax.train(rows=rows, cols=cols, time_budget=10.0)
 
     print("Training RL")
-    rl = RLPlayer()
-    rl.train(rows=rows, cols=cols, time_budget=30.0)
+    rl = RLPlayer(episodes_per_generation=50000, num_generations=20)
+    rl.train(rows=3, cols=3, time_budget=60.0)
 
     print("Playing")
-    results = play_series(minimax, rl, rows=rows, cols=cols, games=100)
+    #results = play_series(minimax, rl, rows=3, cols=3, games=100)
+    results = play_series(a, rl, rows=3, cols=3, games=100)
     print(results)
     
     #print(play_series(a, b, rows=5, cols=7, games=1000))
