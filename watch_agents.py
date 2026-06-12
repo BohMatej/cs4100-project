@@ -1,9 +1,8 @@
 """
-Watch two agents play Chomp against each other.
+Visualization to watch two agents play Chomp against each other.
 
 Configure the two players in the settings block below.
 
-Controls: R restarts the game, ESC or closing the window quits.
 
 For a minimax player, BUDGET is a fraction of all reachable positions it is
 allowed to remember  None means unlimited.
@@ -40,7 +39,6 @@ COLOR_WIN = (0, 150, 0)
 
 
 def count_states(rows, cols):
-    # total reachable non-terminal positions on this board
     seen = set()
     stack = [ChompState.initial(rows, cols)]
     while stack:
@@ -54,13 +52,12 @@ def count_states(rows, cols):
 
 
 def build_agent(slot, kind, budget, rows, cols):
-    # build and train one agent; slot is "P0" or "P1" so names stay distinct
     if kind == "minimax":
         if budget is None:
             cap = None
             desc = "Minimax (full)"
         else:
-            cap = int(count_states(rows, cols) * budget)   # fraction -> count
+            cap = int(count_states(rows, cols) * budget)   
             desc = f"Minimax ({int(budget * 100)}% mem)"
         agent = MinimaxPlayer(memory_budget=cap)
         agent.train(rows=rows, cols=cols, time_budget=10.0, memory_budget=cap)
@@ -85,7 +82,7 @@ def make_agents(rows, cols):
 class AgentViewer:
     def __init__(self, player_0, player_1, rows, cols):
         pygame.init()
-        self.players = (player_0, player_1)   # player_0 moves first
+        self.players = (player_0, player_1)   
         self.rows = rows
         self.cols = cols
         self.game = ChompGame(rows, cols)
@@ -111,11 +108,11 @@ class AgentViewer:
             for c in range(g.cols):
                 rect = self._cell_rect(r, c)
                 if self.last_move == (r, c):
-                    color = COLOR_LAST           # highlight the most recent bite
+                    color = COLOR_LAST           
                 elif g.board[r][c] == 1:
                     color = COLOR_EATEN
                 elif r == 0 and c == 0:
-                    color = COLOR_POISON         # the poison cell
+                    color = COLOR_POISON         
                 else:
                     color = COLOR_CELL
                 pygame.draw.rect(self.screen, color, rect)
@@ -137,7 +134,6 @@ class AgentViewer:
                                               top=board_bottom + 20))
 
     def _step(self):
-        # let the current player's agent make one move
         g = self.game
         mover = self.players[g.current_player]
         move = mover.select_move(g.snapshot(), g.legal_moves())
